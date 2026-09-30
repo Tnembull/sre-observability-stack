@@ -1,0 +1,32 @@
+name: "Observability Stack Lint & Validation"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  lint-and-validate:
+    name: "Validate Compose & Configs"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "Validate Docker Compose Syntax"
+        run: |
+          docker compose config --quiet
+
+      - name: "Validate Prometheus Configuration & Rules"
+        uses: docker://prom/prometheus:v2.53.1
+        with:
+          entrypoint: /bin/promtool
+          args: check config /github/workspace/prometheus/prometheus.yml
+
+      - name: "Validate Prometheus Alert Rules"
+        uses: docker://prom/prometheus:v2.53.1
+        with:
+          entrypoint: /bin/promtool
+          args: check rules /github/workspace/prometheus/alert.rules.yml
